@@ -1,0 +1,2467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carteira Zoom - Análise de Investimentos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --light-color: #ecf0f1;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 56px;
+        }
+        
+        .sidebar {
+            background-color: var(--primary-color);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            padding-top: 20px;
+            z-index: 1000;
+            transition: all 0.3s;
+            width: 250px;
+        }
+        
+        .sidebar a {
+            color: var(--light-color);
+            padding: 15px 20px;
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s;
+        }
+        
+        .sidebar a:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .sidebar a.active {
+            background-color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+        }
+        
+        .table th {
+            background-color: var(--light-color);
+        }
+        
+        .positive-return {
+            color: var(--success-color);
+        }
+        
+        .negative-return {
+            color: var(--danger-color);
+        }
+        
+        .stats-card {
+            text-align: center;
+            padding: 15px;
+        }
+        
+        .stats-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .stats-label {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .navbar {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-title {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 10px;
+            margin: 20px 0;
+        }
+        
+        .content-section {
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        .editable-cell {
+            position: relative;
+        }
+        
+        .editable-cell input {
+            width: 100%;
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .edit-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .cotacao-atual {
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+        
+        .loading-cotacao {
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .queda-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .queda-faixa1 {
+            background-color: #ffeeba;
+            color: #856404;
+        }
+        
+        .queda-faixa2 {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .queda-faixa3 {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .alta-faixa1 {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .alta-faixa2 {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        
+        .alta-faixa3 {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .logo-container {
+            text-align: center;
+            padding: 15px 10px;
+            margin-bottom: 20px;
+        }
+        
+        .logo-container img {
+            max-width: 180px;
+            height: auto;
+            filter: brightness(0) invert(1); /* Torna a logo branca */
+        }
+        
+        .mobile-header {
+            display: none;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .mobile-header .logo-container {
+            padding: 0;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .mobile-header .logo-container img {
+            max-width: 150px;
+            filter: brightness(0) invert(1); /* Torna a logo branca */
+        }
+        
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .ativo-item {
+            cursor: move;
+        }
+        
+        .submenu {
+            padding-left: 30px;
+            font-size: 0.9em;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 250px;
+                height: 100%;
+                overflow-y: auto;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .mobile-header {
+                display: block;
+            }
+            
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0,0,0,0.5);
+                z-index: 999;
+            }
+            
+            .overlay.active {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .card-body {
+                padding: 15px;
+            }
+            
+            .table-responsive {
+                font-size: 14px;
+            }
+            
+            .stats-value {
+                font-size: 20px;
+            }
+            
+            .btn-group-sm > .btn {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header para mobile -->
+    <div class="mobile-header">
+        <div class="logo-container">
+            <button class="menu-toggle" id="menuToggle">
+                <i class="bi bi-list"></i>
+            </button>
+            <img src="https://github.com/catskilltrader/App-CarteiraZoom/blob/main/Logo%201%20-%20Carteira%20Zoom%20(Sem%20fundo).png?raw=true" alt="Carteira Zoom">
+            <div style="width: 48px;"></div> <!-- Espaço para alinhamento -->
+        </div>
+    </div>
+    
+    <!-- Overlay para mobile -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Barra lateral -->
+    <div class="sidebar" id="sidebar">
+        <div class="logo-container d-none d-md-block">
+            <img src="https://github.com/catskilltrader/App-CarteiraZoom/blob/main/Logo%201%20-%20Carteira%20Zoom%20(Sem%20fundo).png?raw=true" alt="Carteira Zoom">
+        </div>
+        <a href="#" class="nav-link" data-section="dashboard"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+        <a href="#" class="nav-link" data-section="carteira"><i class="bi bi-table me-2"></i> Carteira</a>
+        <a href="#" class="nav-link" data-section="performance"><i class="bi bi-graph-up me-2"></i> Performance</a>
+        <a href="#" class="nav-link" data-section="dividendos"><i class="bi bi-cash-coin me-2"></i> Dividendos</a>
+        <a href="#" class="nav-link active" data-section="relatorios-estudos"><i class="bi bi-clipboard-data me-2"></i> Relatórios & Estudos</a>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div class="main-content" id="mainContent">
+        <!-- Seção Dashboard -->
+        <div id="dashboard" class="content-section">
+            <h2 class="section-title">Dashboard de Renda Variável</h2>
+            
+            <!-- Cards de estatísticas -->
+            <div class="row">
+                <div class="col-md-3 col-6">
+                    <div class="card">
+                        <div class="stats-card">
+                            <div class="stats-value positive-return">18,7%</div>
+                            <div class="stats-label">Retorno Anual</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card">
+                        <div class="stats-card">
+                            <div class="stats-value">1.28</div>
+                            <div class="stats-label">Índice Sharpe</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card">
+                        <div class="stats-card">
+                            <div class="stats-value">14,2%</div>
+                            <div class="stats-label">Volatilidade</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card">
+                        <div class="stats-card">
+                            <div class="stats-value positive-return">R$ 2.450</div>
+                            <div class="stats-label">Dividendos/Mês</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico e tabela -->
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            Performance da Carteira vs. IBOV
+                        </div>
+                        <div class="card-body">
+                            <canvas id="performanceChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            Alocação por Setor
+                        </div>
+                        <div class="card-body">
+                            <canvas id="sectorChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela de ativos -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Carteira de Ativos</span>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary me-2">Exportar</button>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-secondary">Filtrar</button>
+                            <button class="btn btn-sm btn-outline-secondary">Ordenar</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Ativo</th>
+                                    <th>Setor</th>
+                                    <th>Preço (R$)</th>
+                                    <th>P/VPA</th>
+                                    <th>Div. Yield</th>
+                                    <th>Retorno 12M</th>
+                                    <th>Retorno Ano</th>
+                                    <th>Sharpe</th>
+                                    <th>Volatilidade</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>PETR4</td>
+                                    <td>Energia</td>
+                                    <td>32.67</td>
+                                    <td>1.24</td>
+                                    <td>8.2%</td>
+                                    <td class="positive-return">+24.7%</td>
+                                    <td class="positive-return">+15.3%</td>
+                                    <td>1.42</td>
+                                    <td>22.1%</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">Detalhes</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>VALE3</td>
+                                    <td>Mineração</td>
+                                    <td>68.91</td>
+                                    <td>1.32</td>
+                                    <td>6.7%</td>
+                                    <td class="positive-return">+18.3%</td>
+                                    <td class="positive-return">+12.8%</td>
+                                    <td>1.28</td>
+                                    <td>20.4%</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">Detalhes</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>SLCE3</td>
+                                    <td>Agropecuário</td>
+                                    <td>45.20</td>
+                                    <td>1.15</td>
+                                    <td>4.5%</td>
+                                    <td class="positive-return">+12.5%</td>
+                                    <td class="positive-return">+8.2%</td>
+                                    <td>1.10</td>
+                                    <td>18.7%</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">Detalhes</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>BBAS3</td>
+                                    <td>Financeiro</td>
+                                    <td>35.40</td>
+                                    <td>0.92</td>
+                                    <td>5.8%</td>
+                                    <td class="positive-return">+12.4%</td>
+                                    <td class="positive-return">+8.9%</td>
+                                    <td>1.15</td>
+                                    <td>18.3%</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">Detalhes</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>CPFE3</td>
+                                    <td>Energia</td>
+                                    <td>32.15</td>
+                                    <td>1.08</td>
+                                    <td>6.2%</td>
+                                    <td class="positive-return">+9.8%</td>
+                                    <td class="positive-return">+7.3%</td>
+                                    <td>0.95</td>
+                                    <td>16.5%</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">Detalhes</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Abas para dividendos e detalhes -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <ul class="nav nav-tabs card-header-tabs">
+                                <li class="nav-item">
+                                    <a class="nav-link active" href="#">Histórico de Dividendos</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#">Projeção</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="dividendChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            Detalhes do Ativo Selecionado
+                        </div>
+                        <div class="card-body">
+                            <h5>PETR4 - Petrobras</h5>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <p><strong>Setor:</strong> Energia</p>
+                                    <p><strong>Cotacao:</strong> R$ 32.67</p>
+                                    <p><strong>P/VPA:</strong> 1.24</p>
+                                    <p><strong>DY:</strong> 8.2%</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Retorno 12M:</strong> <span class="positive-return">+24.7%</span></p>
+                                    <p><strong>Retorno Ano:</strong> <span class="positive-return">+15.3%</span></p>
+                                    <p><strong>Sharpe:</strong> 1.42</p>
+                                    <p><strong>Volatilidade:</strong> 22.1%</p>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-outline-primary">Ver Histórico Completo</button>
+                                <button class="btn btn-sm btn-outline-secondary ms-2">Comparar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção Carteira -->
+        <div id="carteira" class="content-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="section-title">Minha Carteira</h2>
+                <div>
+                    <button class="btn btn-primary" id="btn-adicionar-ativo">
+                        <i class="bi bi-plus-circle"></i> Adicionar Ativo
+                    </button>
+                    <button class="btn btn-outline-secondary ms-2" id="btn-reordenar">
+                        <i class="bi bi-arrow-down-up"></i> Reordenar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            Composição da Carteira
+                        </div>
+                        <div class="card-body">
+                            <canvas id="carteiraChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            Resumo da Carteira
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <p class="mb-1">Valor Total Investido</p>
+                                <h4 class="positive-return">R$ <span id="total-investido">183.245,60</span></h4>
+                            </div>
+                            <div class="mb-3">
+                                <p class="mb-1">Valor Atual</p>
+                                <h4 class="positive-return">R$ <span id="valor-atual">216.502,40</span></h4>
+                            </div>
+                            <div class="mb-3">
+                                <p class="mb-1">Lucro/Prejuízo</p>
+                                <h4 class="positive-return" id="lucro-prejuizo">+ R$ 33.256,80 (+18,2%)</h4>
+                            </div>
+                            <div class="mb-3">
+                                <p class="mb-1">Total em Dividendos</p>
+                                <h4 class="positive-return">R$ <span id="total-dividendos">12.845,30</span></h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Detalhamento dos Ativos</span>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary me-2" id="btn-exportar">Exportar</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="tabela-ativos">
+                            <thead>
+                                <tr>
+                                    <th width="5%"></th>
+                                    <th>Ativo</th>
+                                    <th>Quantidade</th>
+                                    <th>Cotacao Atual</th>
+                                    <th>Total Investido</th>
+                                    <th>Valor Atual</th>
+                                    <th>% Carteira</th>
+                                    <th>Retorno Ano</th>
+                                    <th>Resultado</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr data-ativo="PETR4" data-quantidade="800" class="ativo-item">
+                                    <td><i class="bi bi-grip-vertical"></i></td>
+                                    <td class="editable-cell">
+                                        <span class="view-mode">PETR4</span>
+                                        <input type="text" class="edit-mode form-control form-control-sm" value="PETR4" style="display: none;">
+                                    </td>
+                                    <td class="editable-cell">
+                                        <span class="view-mode">800</span>
+                                        <input type="number" class="edit-mode form-control form-control-sm" value="800" style="display: none;">
+                                    </td>
+                                    <td class="cotacao-atual" data-ticket="PETR4">R$ 32,67</td>
+                                    <td>R$ 21.080,00</td>
+                                    <td>R$ 26.136,00</td>
+                                    <td>12,1%</td>
+                                    <td class="positive-return">+15,3%</td>
+                                    <td class="positive-return">+24,0%</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm view-mode">
+                                            <button class="btn btn-outline-primary btn-editar">Editar</button>
+                                            <button class="btn btn-outline-danger btn-excluir">Excluir</button>
+                                        </div>
+                                        <div class="btn-group btn-group-sm edit-mode" style="display: none;">
+                                            <button class="btn btn-outline-success btn-salvar">Salvar</button>
+                                            <button class="btn btn-outline-secondary btn-cancelar">Cancelar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr data-ativo="VALE3" data-quantidade="450" class="ativo-item">
+                                    <td><i class="bi bi-grip-vertical"></i></td>
+                                    <td class="editable-cell">
+                                        <span class="view-mode">VALE3</span>
+                                        <input type="text" class="edit-mode form-control form-control-sm" value="VALE3" style="display: none;">
+                                    </td>
+                                    <td class="editable-cell">
+                                        <span class="view-mode">450</span>
+                                        <input type="number" class="edit-mode form-control form-control-sm" value="450" style="display: none;">
+                                    </td>
+                                    <td class="cotacao-atual" data-ticket="VALE3">R$ 68,91</td>
+                                    <td>R$ 26.190,00</td>
+                                    <td>R$ 31.009,50</td>
+                                    <td>14,3%</td>
+                                    <td class="positive-return">+12,8%</td>
+                                    <td class="positive-return">+18,4%</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm view-mode">
+                                            <button class="btn btn-outline-primary btn-editar">Editar</button>
+                                            <button class="btn btn-outline-danger btn-excluir">Excluir</button>
+                                        </div>
+                                        <div class="btn-group btn-group-sm edit-mode" style="display: none;">
+                                            <button class="btn btn-outline-success btn-salvar">Salvar</button>
+                                            <button class="btn btn-outline-secondary btn-cancelar">Cancelar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr data-ativo="BBAS3" data-quantidade="600" class="ativo-item">
+                                    <td><i class="bi bi-grip-vertical"></i></td>
+                                    <td class="editable-cell">
+                                        <span class="view-mode">BBAS3</span>
+                                        <input type="text" class="edit-mode form-control form-control-sm" value="BBAS3" style="display: none;">
+                                    </td>
+                                    <td class="editable-cell">
+                                        <span class="view-mode">600</span>
+                                        <input type="number" class="edit-mode form-control form-control-sm" value="600" style="display: none;">
+                                    </td>
+                                    <td class="cotacao-atual" data-ticket="BBAS3">R$ 35,40</td>
+                                    <td>R$ 18.240,00</td>
+                                    <td>R$ 21.240,00</td>
+                                    <td>9,8%</td>
+                                    <td class="positive-return">+8,9%</td>
+                                    <td class="positive-return">+16,4%</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm view-mode">
+                                            <button class="btn btn-outline-primary btn-editar">Editar</button>
+                                            <button class="btn btn-outline-danger btn-excluir">Excluir</button>
+                                        </div>
+                                        <div class="btn-group btn-group-sm edit-mode" style="display: none;">
+                                            <button class="btn btn-outline-success btn-salvar">Salvar</button>
+                                            <button class="btn btn-outline-secondary btn-cancelar">Cancelar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr data-ativo="SLCE3" data-quantidade="350" class="ativo-item">
+                                    <td><i class="bi bi-grip-vertical"></i></td>
+                                    <td class="editable-cell">
+                                        <span class="view-mode">SLCE3</span>
+                                        <input type="text" class="edit-mode form-control form-control-sm" value="SLCE3" style="display: none;">
+                                    </td>
+                                    <td class="editable-cell">
+                                        <span class="view-mode">350</span>
+                                        <input type="number" class="edit-mode form-control form-control-sm" value="350" style="display: none;">
+                                    </td>
+                                    <td class="cotacao-atual" data-ticket="SLCE3">R$ 45,20</td>
+                                    <td>R$ 14.770,00</td>
+                                    <td>R$ 15.820,00</td>
+                                    <td>7,3%</td>
+                                    <td class="positive-return">+8,2%</td>
+                                    <td class="positive-return">+7,1%</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm view-mode">
+                                            <button class="btn btn-outline-primary btn-editar">Editar</button>
+                                            <button class="btn btn-outline-danger btn-excluir">Excluir</button>
+                                        </div>
+                                        <div class="btn-group btn-group-sm edit-mode" style="display: none;">
+                                            <button class="btn btn-outline-success btn-salvar">Salvar</button>
+                                            <button class="btn btn-outline-secondary btn-cancelar">Cancelar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr data-ativo="CPFE3" data-quantidade="1200" class="ativo-item">
+                                    <td><i class="bi bi-grip-vertical"></i></td>
+                                    <td class="editable-cell">
+                                        <span class="view-mode">CPFE3</span>
+                                        <input type="text" class="edit-mode form-control form-control-sm" value="CPFE3" style="display: none;">
+                                    </td>
+                                    <td class="editable-cell">
+                                        <span class="view-mode">1.200</span>
+                                        <input type="number" class="edit-mode form-control form-control-sm" value="1200" style="display: none;">
+                                    </td>
+                                    <td class="cotacao-atual" data-ticket="CPFE3">R$ 32,15</td>
+                                    <td>R$ 36.180,00</td>
+                                    <td>R$ 38.580,00</td>
+                                    <td>17,8%</td>
+                                    <td class="positive-return">+7,3%</td>
+                                    <td class="positive-return">+6,6%</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm view-mode">
+                                            <button class="btn btn-outline-primary btn-editar">Editar</button>
+                                            <button class="btn btn-outline-danger btn-excluir">Excluir</button>
+                                        </div>
+                                        <div class="btn-group btn-group-sm edit-mode" style="display: none;">
+                                            <button class="btn btn-outline-success btn-salvar">Salvar</button>
+                                            <button class="btn btn-outline-secondary btn-cancelar">Cancelar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-primary">
+                                    <td colspan="4"><strong>TOTAL</strong></td>
+                                    <td><strong>R$ 116.460,00</strong></td>
+                                    <td><strong>R$ 132.785,50</strong></td>
+                                    <td><strong>100%</strong></td>
+                                    <td><strong>+10,5%</strong></td>
+                                    <td><strong>+14,0%</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção Performance -->
+        <div id="performance" class="content-section">
+            <h2 class="section-title">Análise de Performance</h2>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            Retorno por Período
+                        </div>
+                        <div class="card-body">
+                            <canvas id="returnPeriodChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            Comparativo de Volatilidade
+                        </div>
+                        <div class="card-body">
+                            <canvas id="volatilityChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    Métricas de Risco-Retorno
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Ativo</th>
+                                    <th>Retorno Anual</th>
+                                    <th>Retorno Ano</th>
+                                    <th>Volatilidade</th>
+                                    <th>Sharpe</th>
+                                    <th>Beta</th>
+                                    <th>Alfa</th>
+                                    <th>Máximo Drawdown</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>PETR4</td>
+                                    <td class="positive-return">24,7%</td>
+                                    <td class="positive-return">15,3%</td>
+                                    <td>22,1%</td>
+                                    <td>1,42</td>
+                                    <td>1,12</td>
+                                    <td class="positive-return">4,1%</td>
+                                    <td class="negative-return">-18,7%</td>
+                                </tr>
+                                <tr>
+                                    <td>VALE3</td>
+                                    <td class="positive-return">18,3%</td>
+                                    <td class="positive-return">12,8%</td>
+                                    <td>20,4%</td>
+                                    <td>1,28</td>
+                                    <td>1,05</td>
+                                    <td class="positive-return">2,8%</td>
+                                    <td class="negative-return">-16,9%</td>
+                                </tr>
+                                <tr>
+                                    <td>SLCE3</td>
+                                    <td class="positive-return">12,5%</td>
+                                    <td class="positive-return">8,2%</td>
+                                    <td>18,7%</td>
+                                    <td>1,10</td>
+                                    <td>0,88</td>
+                                    <td class="positive-return">2,1%</td>
+                                    <td class="negative-return">-14,5%</td>
+                                </tr>
+                                <tr>
+                                    <td>BBAS3</td>
+                                    <td class="positive-return">12,4%</td>
+                                    <td class="positive-return">8,9%</td>
+                                    <td>18,3%</td>
+                                    <td>1,15</td>
+                                    <td>0,85</td>
+                                    <td class="positive-return">2,3%</td>
+                                    <td class="negative-return">-15,2%</td>
+                                </tr>
+                                <tr>
+                                    <td>CPFE3</td>
+                                    <td class="positive-return">9,8%</td>
+                                    <td class="positive-return">7,3%</td>
+                                    <td>16,5%</td>
+                                    <td>0,95</td>
+                                    <td>0,82</td>
+                                    <td class="positive-return">1,5%</td>
+                                    <td class="negative-return">-12,8%</td>
+                                </tr>
+                                <tr>
+                                    <td>CPLE6</td>
+                                    <td class="positive-return">8,5%</td>
+                                    <td class="positive-return">6,1%</td>
+                                    <td>15,8%</td>
+                                    <td>0,89</td>
+                                    <td>0,78</td>
+                                    <td class="positive-return">1,2%</td>
+                                    <td class="negative-return">-11,9%</td>
+                                </tr>
+                                <tr>
+                                    <td>CMIG4</td>
+                                    <td class="positive-return">7,9%</td>
+                                    <td class="positive-return">5,8%</td>
+                                    <td>14,2%</td>
+                                    <td>0,85</td>
+                                    <td>0,75</td>
+                                    <td class="positive-return">1,0%</td>
+                                    <td class="negative-return">-10,5%</td>
+                                </tr>
+                                <tr>
+                                    <td>CSMG3</td>
+                                    <td class="positive-return">6,8%</td>
+                                    <td class="positive-return">4,9%</td>
+                                    <td>13,5%</td>
+                                    <td>0,78</td>
+                                    <td>0,72</td>
+                                    <td class="positive-return">0,8%</td>
+                                    <td class="negative-return">-9,8%</td>
+                                </tr>
+                                <tr>
+                                    <td>TAEE11</td>
+                                    <td class="positive-return">10,2%</td>
+                                    <td class="positive-return">7,5%</td>
+                                    <td>16,2%</td>
+                                    <td>0,98</td>
+                                    <td>0,84</td>
+                                    <td class="positive-return">1,8%</td>
+                                    <td class="negative-return">-13,2%</td>
+                                </tr>
+                                <tr>
+                                    <td>CXSE3</td>
+                                    <td class="positive-return">11,5%</td>
+                                    <td class="positive-return">8,3%</td>
+                                    <td>17,4%</td>
+                                    <td>1,05</td>
+                                    <td>0,87</td>
+                                    <td class="positive-return">2,0%</td>
+                                    <td class="negative-return">-14,1%</td>
+                                </tr>
+                                <tr>
+                                    <td>PSSA3</td>
+                                    <td class="positive-return">13,2%</td>
+                                    <td class="positive-return">9,1%</td>
+                                    <td>18,9%</td>
+                                    <td>1,12</td>
+                                    <td>0,91</td>
+                                    <td class="positive-return">2,4%</td>
+                                    <td class="negative-return">-15,7%</td>
+                                </tr>
+                                <tr>
+                                    <td>GOAU4</td>
+                                    <td class="positive-return">9,2%</td>
+                                    <td class="positive-return">6,7%</td>
+                                    <td>16,8%</td>
+                                    <td>0,92</td>
+                                    <td>0,83</td>
+                                    <td class="positive-return">1,4%</td>
+                                    <td class="negative-return">-12,5%</td>
+                                </tr>
+                                <tr>
+                                    <td>LEVE3</td>
+                                    <td class="positive-return">8,1%</td>
+                                    <td class="positive-return">5,9%</td>
+                                    <td>15,3%</td>
+                                    <td>0,86</td>
+                                    <td>0,79</td>
+                                    <td class="positive-return">1,1%</td>
+                                    <td class="negative-return">-11,2%</td>
+                                </tr>
+                                <tr>
+                                    <td>EMBR3</td>
+                                    <td class="positive-return">14,8%</td>
+                                    <td class="positive-return">10,2%</td>
+                                    <td>19,5%</td>
+                                    <td>1,20</td>
+                                    <td>0,96</td>
+                                    <td class="positive-return">2,9%</td>
+                                    <td class="negative-return">-16,3%</td>
+                                </tr>
+                                <tr>
+                                    <td>DIRR3</td>
+                                    <td class="positive-return">7,3%</td>
+                                    <td class="positive-return">5,3%</td>
+                                    <td>14,7%</td>
+                                    <td>0,82</td>
+                                    <td>0,76</td>
+                                    <td class="positive-return">0,9%</td>
+                                    <td class="negative-return">-10,8%</td>
+                                </tr>
+                                <tr>
+                                    <td>WEGE3</td>
+                                    <td class="negative-return">-3,5%</td>
+                                    <td class="positive-return">5,2%</td>
+                                    <td>15,6%</td>
+                                    <td>0,87</td>
+                                    <td>0,78</td>
+                                    <td class="negative-return">-1,5%</td>
+                                    <td class="negative-return">-14,8%</td>
+                                </tr>
+                                <tr>
+                                    <td>FRAS3</td>
+                                    <td class="positive-return">6,5%</td>
+                                    <td class="positive-return">4,7%</td>
+                                    <td>14,1%</td>
+                                    <td>0,80</td>
+                                    <td>0,74</td>
+                                    <td class="positive-return">0,7%</td>
+                                    <td class="negative-return">-10,2%</td>
+                                </tr>
+                                <tr>
+                                    <td>MRFG3</td>
+                                    <td class="positive-return">8,7%</td>
+                                    <td class="positive-return">6,3%</td>
+                                    <td>15,9%</td>
+                                    <td>0,90</td>
+                                    <td>0,81</td>
+                                    <td class="positive-return">1,3%</td>
+                                    <td class="negative-return">-12,1%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção Dividendos -->
+        <div id="dividendos" class="content-section">
+            <h2 class="section-title">Análise de Dividendos</h2>
+            
+            <div class="row mb-4">
+                <div class="col-md-3 col-6">
+                    <div class="card">
+                        <div class="stats-card">
+                            <div class="stats-value positive-return">R$ 12.845</div>
+                            <div class="stats-label">Dividendos Recebidos</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card">
+                        <div class="stats-card">
+                            <div class="stats-value">5.2%</div>
+                            <div class="stats-label">Dividend Yield Médio</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card">
+                        <div class="stats-card">
+                            <div class="stats-value">R$ 1.070</div>
+                            <div class="stats-label">Média Mensal</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card">
+                        <div class="stats-card">
+                            <div class="stats-value positive-return">+8.3%</div>
+                            <div class="stats-label">Crescimento Anual</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    Projeção de Dividendos
+                </div>
+                <div class="card-body">
+                    <canvas id="projecaoDividendosChart" height="250"></canvas>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    Histórico de Dividendos por Ativo
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Ativo</th>
+                                    <th>Dividend Yield</th>
+                                    <th>Último Rendimento</th>
+                                    <th>Data do Último</th>
+                                    <th>Total Recebido (12M)</th>
+                                    <th>Projeção Anual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>PETR4</td>
+                                    <td>8.2%</td>
+                                    <td>R$ 2,15</td>
+                                    <td>15/09/2023</td>
+                                    <td>R$ 1.720,00</td>
+                                    <td>R$ 2.140,00</td>
+                                </tr>
+                                <tr>
+                                    <td>VALE3</td>
+                                    <td>6.7%</td>
+                                    <td>R$ 3,82</td>
+                                    <td>20/08/2023</td>
+                                    <td>R$ 1.719,00</td>
+                                    <td>R$ 2.080,50</td>
+                                </tr>
+                                <tr>
+                                    <td>SLCE3</td>
+                                    <td>4.5%</td>
+                                    <td>R$ 1,85</td>
+                                    <td>10/09/2023</td>
+                                    <td>R$ 647,50</td>
+                                    <td>R$ 711,00</td>
+                                </tr>
+                                <tr>
+                                    <td>BBAS3</td>
+                                    <td>5.8%</td>
+                                    <td>R$ 1,45</td>
+                                    <td>05/09/2023</td>
+                                    <td>R$ 870,00</td>
+                                    <td>R$ 1.200,00</td>
+                                </tr>
+                                <tr>
+                                    <td>CPFE3</td>
+                                    <td>6.2%</td>
+                                    <td>R$ 1,92</td>
+                                    <td>18/08/2023</td>
+                                    <td>R$ 2.304,00</td>
+                                    <td>R$ 2.392,00</td>
+                                </tr>
+                                <tr>
+                                    <td>CPLE6</td>
+                                    <td>5.3%</td>
+                                    <td>R$ 0,36</td>
+                                    <td>12/09/2023</td>
+                                    <td>R$ 432,00</td>
+                                    <td>R$ 458,00</td>
+                                </tr>
+                                <tr>
+                                    <td>CMIG4</td>
+                                    <td>4.8%</td>
+                                    <td>R$ 0,50</td>
+                                    <td>22/08/2023</td>
+                                    <td>R$ 600,00</td>
+                                    <td>R$ 624,00</td>
+                                </tr>
+                                <tr>
+                                    <td>CSMG3</td>
+                                    <td>4.2%</td>
+                                    <td>R$ 0,27</td>
+                                    <td>08/09/2023</td>
+                                    <td>R$ 324,00</td>
+                                    <td>R$ 340,00</td>
+                                </tr>
+                                <tr>
+                                    <td>TAEE11</td>
+                                    <td>5.6%</td>
+                                    <td>R$ 1,98</td>
+                                    <td>15/08/2023</td>
+                                    <td>R$ 2.376,00</td>
+                                    <td>R$ 2.448,00</td>
+                                </tr>
+                                <tr>
+                                    <td>CXSE3</td>
+                                    <td>3.9%</td>
+                                    <td>R$ 0,38</td>
+                                    <td>25/08/2023</td>
+                                    <td>R$ 456,00</td>
+                                    <td>R$ 475,00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção Relatórios & Estudos -->
+        <div id="relatorios-estudos" class="content-section active">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="section-title">Relatórios & Estudos</h2>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary active" data-estudo="queda">Estudos de Queda</button>
+                    <button class="btn btn-outline-primary" data-estudo="benchmark">Benchmarks</button>
+                </div>
+            </div>
+            
+            <!-- Conteúdo de Estudos de Queda -->
+            <div id="conteudo-queda" class="estudo-conteudo">
+                <h3 class="mb-4">Estudos de Queda - PETR4</h3>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4 col-6">
+                        <div class="card">
+                            <div class="stats-card">
+                                <div class="stats-value">-24%</div>
+                                <div class="stats-label">Queda Média</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="card">
+                            <div class="stats-card">
+                                <div class="stats-value">30 dias</div>
+                                <div class="stats-label">Tempo Médio de Queda</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="card">
+                            <div class="stats-card">
+                                <div class="stats-value">47 dias</div>
+                                <div class="stats-label">Tempo Médio de Recuperação</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Histórico de Quedas and Recuperações</span>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary">Exportar</button>
+                            <button class="btn btn-sm btn-outline-secondary">Filtrar</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Ano</th>
+                                        <th>Drawdown</th>
+                                        <th>Tempo de Queda (D)</th>
+                                        <th>Recuperação</th>
+                                        <th>Tempo de Alta (D)</th>
+                                        <th>Gráfico</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>2018</td>
+                                        <td><span class="queda-badge queda-faixa3">-50%</span></td>
+                                        <td>25</td>
+                                        <td><span class="queda-badge alta-faixa3">50%</span></td>
+                                        <td>30</td>
+                                        <td>1S</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2018</td>
+                                        <td><span class="queda-badge queda-faixa2">-26%</span></td>
+                                        <td>45</td>
+                                        <td><span class="queda-badge alta-faixa2">45%</span></td>
+                                        <td>58</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2019</td>
+                                        <td><span class="queda-badge queda-faixa1">-16%</span></td>
+                                        <td>45</td>
+                                        <td><span class="queda-badge alta-faixa1">17%</span></td>
+                                        <td>35</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2019</td>
+                                        <td><span class="queda-badge queda-faixa1">-18%</span></td>
+                                        <td>35</td>
+                                        <td><span class="queda-badge alta-faixa1">18%</span></td>
+                                        <td>15</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2020</td>
+                                        <td><span class="queda-badge queda-faixa3">-66%</span></td>
+                                        <td>20</td>
+                                        <td><span class="queda-badge alta-faixa3">110%</span></td>
+                                        <td>60</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2020</td>
+                                        <td><span class="queda-badge queda-faixa2">-26%</span></td>
+                                        <td>55</td>
+                                        <td><span class="queda-badge alta-faixa3">73%</span></td>
+                                        <td>50</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2021</td>
+                                        <td><span class="queda-badge queda-faixa2">-35%</span></td>
+                                        <td>45</td>
+                                        <td><span class="queda-badge alta-faixa2">50%</span></td>
+                                        <td>80</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2021</td>
+                                        <td><span class="queda-badge queda-faixa1">-13%</span></td>
+                                        <td>20</td>
+                                        <td><span class="queda-badge alta-faixa1">16%</span></td>
+                                        <td>25</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2021</td>
+                                        <td><span class="queda-badge queda-faixa1">-16%</span></td>
+                                        <td>35</td>
+                                        <td><span class="queda-badge alta-faixa2">26%</span></td>
+                                        <td>15</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2021</td>
+                                        <td><span class="queda-badge queda-faixa1">-14%</span></td>
+                                        <td>26</td>
+                                        <td><span class="queda-badge alta-faixa2">30%</span></td>
+                                        <td>20</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2022</td>
+                                        <td><span class="queda-badge queda-faixa1">-16%</span></td>
+                                        <td>12</td>
+                                        <td><span class="queda-badge alta-faixa2">33%</span></td>
+                                        <td>55</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2022</td>
+                                        <td><span class="queda-badge queda-faixa1">-20%</span></td>
+                                        <td>20</td>
+                                        <td><span class="queda-badge alta-faixa3">64%</span></td>
+                                        <td>55</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2022</td>
+                                        <td><span class="queda-badge queda-faixa1">-20%</span></td>
+                                        <td>25</td>
+                                        <td><span class="queda-badge alta-faixa2">35%</span></td>
+                                        <td>20</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2022</td>
+                                        <td><span class="queda-badge queda-faixa2">-32%</span></td>
+                                        <td>20</td>
+                                        <td><span class="queda-badge alta-faixa1">17%</span></td>
+                                        <td>77</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2023</td>
+                                        <td><span class="queda-badge queda-faixa1">-17%</span></td>
+                                        <td>40</td>
+                                        <td><span class="queda-badge alta-faixa3">67%</span></td>
+                                        <td>65</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2024</td>
+                                        <td><span class="queda-badge queda-faixa1">-18%</span></td>
+                                        <td>15</td>
+                                        <td><span class="queda-badge alta-faixa2">28%</span></td>
+                                        <td>40</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2024</td>
+                                        <td><span class="queda-badge queda-faixa1">-16%</span></td>
+                                        <td>25</td>
+                                        <td><span class="queda-badge alta-faixa1">19%</span></td>
+                                        <td>50</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2025</td>
+                                        <td><span class="queda-badge queda-faixa1">-21%</span></td>
+                                        <td>25</td>
+                                        <td><span class="queda-badge alta-faixa1">10%</span></td>
+                                        <td>90</td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr class="table-primary">
+                                        <td><strong>Médias</strong></td>
+                                        <td><strong>-24%</strong></td>
+                                        <td><strong>29,61</strong></td>
+                                        <td><strong>39%</strong></td>
+                                        <td><strong>46,67</strong></td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                Distribuição de Quedas por Faixa
+                            </div>
+                            <div class="card-body">
+                                <canvas id="quedaChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                Distribuição de Recuperações por Faixa
+                            </div>
+                            <div class="card-body">
+                                <canvas id="recuperacaoChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        Análise de Faixas
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Faixas de Queda</h5>
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Faixa</th>
+                                            <th>Qtd. Ocorrências</th>
+                                            <th>Percentual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><span class="queda-badge queda-faixa1">-15% a -20%</span></td>
+                                            <td>10</td>
+                                            <td>58.8%</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="queda-badge queda-faixa2">-20% a -30%</span></td>
+                                            <td>4</td>
+                                            <td>23.5%</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="queda-badge queda-faixa3">-30% a -60%+</span></td>
+                                            <td>3</td>
+                                            <td>17.6%</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Faixas de Recuperação</h5>
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Faixa</th>
+                                            <th>Qtd. Ocorrências</th>
+                                            <th>Percentual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><span class="queda-badge alta-faixa1">15% a 20%</span></td>
+                                            <td>6</td>
+                                            <td>35.3%</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="queda-badge alta-faixa2">20% a 30%</span></td>
+                                            <td>4</td>
+                                            <td>23.5%</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="queda-badge alta-faixa3">30% a 60%+</span></td>
+                                            <td>7</td>
+                                            <td>41.2%</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Conteúdo de Benchmarks -->
+            <div id="conteudo-benchmark" class="estudo-conteudo" style="display: none;">
+                <h3 class="mb-4">Benchmarks de Mercado</h3>
+                
+                <div class="row mb-4">
+                    <div class="col-md-3 col-6">
+                        <div class="card">
+                            <div class="stats-card">
+                                <div class="stats-value">8,49%</div>
+                                <div class="stats-label">CDI Médio a.a</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="card">
+                            <div class="stats-card">
+                                <div class="stats-value">5,85%</div>
+                                <div class="stats-label">IPCA Médio a.a</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="card">
+                            <div class="stats-card">
+                                <div class="stats-value">2,00%</div>
+                                <div class="stats-label">IBOV Médio a.a</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="card">
+                            <div class="stats-card">
+                                <div class="stats-value">2,64%</div>
+                                <div class="stats-label">Ganho Real CDI</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        Comparativo de Benchmarks
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Ano</th>
+                                        <th>CDI</th>
+                                        <th>IPCA</th>
+                                        <th>IBOV</th>
+                                        <th>CDI - IPCA</th>
+                                        <th>IBOV - IPCA</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>2020</td>
+                                        <td>2,75%</td>
+                                        <td>4,52%</td>
+                                        <td class="positive-return">2,92%</td>
+                                        <td class="negative-return">-1,77%</td>
+                                        <td class="negative-return">-1,60%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2021</td>
+                                        <td>4,44%</td>
+                                        <td>10,06%</td>
+                                        <td class="negative-return">-11,93%</td>
+                                        <td class="negative-return">-5,62%</td>
+                                        <td class="negative-return">-21,99%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2022</td>
+                                        <td class="positive-return">12,38%</td>
+                                        <td>5,78%</td>
+                                        <td class="positive-return">4,69%</td>
+                                        <td class="positive-return">6,60%</td>
+                                        <td class="negative-return">-1,09%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2023</td>
+                                        <td class="positive-return">13,03%</td>
+                                        <td>4,62%</td>
+                                        <td class="positive-return">22,28%</td>
+                                        <td class="positive-return">8,41%</td>
+                                        <td class="positive-return">17,66%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2024</td>
+                                        <td class="positive-return">9,87%</td>
+                                        <td>4,29%</td>
+                                        <td class="negative-return">-7,98%</td>
+                                        <td class="positive-return">5,58%</td>
+                                        <td class="negative-return">-12,27%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2025</td>
+                                        <td class="positive-return">9,04%</td>
+                                        <td>3,15%</td>
+                                        <td class="positive-return">19,75%</td>
+                                        <td class="positive-return">5,89%</td>
+                                        <td class="positive-return">16,60%</td>
+                                    </tr>
+                                    <tr class="table-primary">
+                                        <td><strong>Méd. a.a</strong></td>
+                                        <td><strong>8,49%</strong></td>
+                                        <td><strong>5,85%</strong></td>
+                                        <td><strong>2,00%</strong></td>
+                                        <td><strong>2,64%</strong></td>
+                                        <td><strong>0,17%</strong></td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="6" class="small">Ref: Set/2025 | Referência: 2020 - 2024</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                Evolução dos Benchmarks
+                            </div>
+                            <div class="card-body">
+                                <canvas id="benchmarkChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                Ganho Real Comparativo
+                            </div>
+                            <div class="card-body">
+                                <canvas id="ganhoRealChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuração da navegação
+        document.addEventListener('DOMContentLoaded', function() {
+            // Adiciona event listeners para os links de navegação
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove a classe active de todos os links
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                    
+                    // Adiciona a classe active ao link clicado
+                    this.classList.add('active');
+                    
+                    // Oculta todas as seções de conteúdo
+                    document.querySelectorAll('.content-section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    // Exibe a seção correspondente ao link clicado
+                    const sectionId = this.getAttribute('data-section');
+                    document.getElementById(sectionId).classList.add('active');
+                    
+                    // Fecha o menu no mobile após clicar em um item
+                    if (window.innerWidth < 992) {
+                        toggleSidebar();
+                    }
+                });
+            });
+
+            // Configuração do menu mobile
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const mainContent = document.getElementById('mainContent');
+            
+            menuToggle.addEventListener('click', toggleSidebar);
+            overlay.addEventListener('click', toggleSidebar);
+            
+            function toggleSidebar() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+                
+                if (sidebar.classList.contains('active')) {
+                    menuToggle.innerHTML = '<i class="bi bi-x-lg"></i>';
+                } else {
+                    menuToggle.innerHTML = '<i class="bi bi-list"></i>';
+                }
+            }
+
+            // Configuração dos botões de estudo
+            document.querySelectorAll('[data-estudo]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const estudo = this.getAttribute('data-estudo');
+                    
+                    // Remove a classe active de todos os botões
+                    document.querySelectorAll('[data-estudo]').forEach(b => {
+                        b.classList.remove('active');
+                    });
+                    
+                    // Adiciona a classe active ao botão clicado
+                    this.classList.add('active');
+                    
+                    // Oculta todos os conteúdos de estudo
+                    document.querySelectorAll('.estudo-conteudo').forEach(conteudo => {
+                        conteudo.style.display = 'none';
+                    });
+                    
+                    // Exibe o conteúdo correspondente
+                    document.getElementById(`conteudo-${estudo}`).style.display = 'block';
+                });
+            });
+
+            // Buscar cotações automaticamente
+            buscarCotacoes();
+
+            // Configurar eventos de edição
+            configurarEventosEdicao();
+
+            // Configurar evento do botão adicionar ativo
+            document.getElementById('btn-adicionar-ativo').addEventListener('click', adicionarNovoAtivo);
+
+            // Configurar evento do botão reordenar
+            document.getElementById('btn-reordenar').addEventListener('click', toggleModoReordenar);
+
+            // Gráficos do Dashboard
+            const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+            const performanceChart = new Chart(performanceCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                    datasets: [{
+                        label: 'Minha Carteira',
+                        data: [100, 105, 108, 112, 110, 115, 120, 118, 125, 130, 132, 140],
+                        borderColor: '#3498db',
+                        tension: 0.3,
+                        fill: false
+                    }, {
+                        label: 'IBOV',
+                        data: [100, 102, 101, 99, 98, 102, 107, 105, 108, 112, 115, 120],
+                        borderColor: '#e74c3c',
+                        tension: 0.3,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Evolução da Carteira (12 meses)'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de setores
+            const sectorCtx = document.getElementById('sectorChart').getContext('2d');
+            const sectorChart = new Chart(sectorCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Financeiro', 'Energia', 'Industrial', 'Mineração', 'Varejo', 'Outros'],
+                    datasets: [{
+                        data: [35, 25, 15, 12, 8, 5],
+                        backgroundColor: [
+                            '#3498db',
+                            '#2ecc71',
+                            '#e74c3c',
+                            '#f39c12',
+                            '#9b59b6',
+                            '#34495e'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de dividendos
+            const dividendCtx = document.getElementById('dividendChart').getContext('2d');
+            const dividendChart = new Chart(dividendCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['1º Trim', '2º Trim', '3º Trim', '4º Trim'],
+                    datasets: [{
+                        label: 'Dividendos (R$)',
+                        data: [1850, 2100, 1950, 2450],
+                        backgroundColor: '#2ecc71'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de composição da carteira
+            const carteiraCtx = document.getElementById('carteiraChart').getContext('2d');
+            const carteiraChart = new Chart(carteiraCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['PETR4', 'VALE3', 'BBAS3', 'SLCE3', 'CPFE3', 'Outros'],
+                    datasets: [{
+                        data: [24, 19, 14, 11, 12, 20],
+                        backgroundColor: [
+                            '#3498db',
+                            '#2ecc71',
+                            '#e74c3c',
+                            '#f39c12',
+                            '#9b59b6',
+                            '#34495e'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de retorno por período (Performance)
+            const returnPeriodCtx = document.getElementById('returnPeriodChart').getContext('2d');
+            const returnPeriodChart = new Chart(returnPeriodCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['1M', '3M', '6M', '12M', '24M'],
+                    datasets: [{
+                        label: 'Retorno (%)',
+                        data: [2.4, 5.7, 9.2, 18.7, 42.3],
+                        backgroundColor: '#3498db'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de volatilidade (Performance)
+            const volatilityCtx = document.getElementById('volatilityChart').getContext('2d');
+            const volatilityChart = new Chart(volatilityCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Volatilidade', 'Risco Sistemático', 'Risco Não-Sistemático', 'Drawdown Máximo', 'Índice Sharpe'],
+                    datasets: [{
+                        label: 'Minha Carteira',
+                        data: [75, 85, 60, 70, 90],
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        borderColor: '#3498db',
+                        pointBackgroundColor: '#3498db'
+                    }, {
+                        label: 'Mercado',
+                        data: [65, 95, 40, 80, 75],
+                        backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                        borderColor: '#2ecc71',
+                        pointBackgroundColor: '#2ecc71'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de projeção de dividendos
+            const projecaoDividendosCtx = document.getElementById('projecaoDividendosChart').getContext('2d');
+            const projecaoDividendosChart = new Chart(projecaoDividendosCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                    datasets: [{
+                        label: 'Dividendos Recebidos (R$)',
+                        data: [920, 1050, 980, 1100, 1020, 1150, 1250, 1180, 1320, 1280, 1350, 1420],
+                        borderColor: '#2ecc71',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Projeção de Dividendos Mensais'
+                        }
+                    }
+                }
+            });
+
+            // Gráficos para Estudos de Queda
+            const quedaCtx = document.getElementById('quedaChart').getContext('2d');
+            const quedaChart = new Chart(quedaCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['-15% a -20%', '-20% a -30%', '-30% a -60%+'],
+                    datasets: [{
+                        label: 'Qtd. Ocorrências',
+                        data: [10, 4, 3],
+                        backgroundColor: [
+                            '#ffeeba',
+                            '#f8d7da',
+                            '#d4edda'
+                        ],
+                        borderColor: [
+                            '#ffc107',
+                            '#dc3545',
+                            '#28a745'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Quantidade de Ocorrências'
+                            }
+                        }
+                    }
+                }
+            });
+
+            const recuperacaoCtx = document.getElementById('recuperacaoChart').getContext('2d');
+            const recuperacaoChart = new Chart(recuperacaoCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['15% a 20%', '20% a 30%', '30% a 60%+'],
+                    datasets: [{
+                        label: 'Qtd. Ocorrências',
+                        data: [6, 4, 7],
+                        backgroundColor: [
+                            '#d4edda',
+                            '#cce5ff',
+                            '#d1ecf1'
+                        ],
+                        borderColor: [
+                            '#28a745',
+                            '#007bff',
+                            '#17a2b8'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Quantidade de Ocorrências'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Gráficos para Benchmarks
+            const benchmarkCtx = document.getElementById('benchmarkChart').getContext('2d');
+            const benchmarkChart = new Chart(benchmarkCtx, {
+                type: 'line',
+                data: {
+                    labels: ['2020', '2021', '2022', '2023', '2024', '2025'],
+                    datasets: [{
+                        label: 'CDI',
+                        data: [2.75, 4.44, 12.38, 13.03, 9.87, 9.04],
+                        borderColor: '#3498db',
+                        tension: 0.3,
+                        fill: false
+                    }, {
+                        label: 'IPCA',
+                        data: [4.52, 10.06, 5.78, 4.62, 4.29, 3.15],
+                        borderColor: '#e74c3c',
+                        tension: 0.3,
+                        fill: false
+                    }, {
+                        label: 'IBOV',
+                        data: [2.92, -11.93, 4.69, 22.28, -7.98, 19.75],
+                        borderColor: '#2ecc71',
+                        tension: 0.3,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Evolução dos Benchmarks (%)'
+                        }
+                    }
+                }
+            });
+
+            const ganhoRealCtx = document.getElementById('ganhoRealChart').getContext('2d');
+            const ganhoRealChart = new Chart(ganhoRealCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['2020', '2021', '2022', '2023', '2024', '2025'],
+                    datasets: [{
+                        label: 'CDI - IPCA',
+                        data: [-1.77, -5.62, 6.60, 8.41, 5.58, 5.89],
+                        backgroundColor: '#3498db'
+                    }, {
+                        label: 'IBOV - IPCA',
+                        data: [-1.60, -21.99, -1.09, 17.66, -12.27, 16.60],
+                        backgroundColor: '#2ecc71'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Ganho Real Comparativo (%)'
+                        }
+                    }
+                }
+            });
+        });
+
+        // Função para buscar cotações
+        async function buscarCotacoes() {
+            const elementosCotacao = document.querySelectorAll('.cotacao-atual');
+            
+            for (const elemento of elementosCotacao) {
+                const ticket = elemento.getAttribute('data-ticket');
+                
+                try {
+                    // Simulação de busca de cotação (em um caso real, integraria com API)
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    
+                    // Valores simulados para os ativos
+                    const cotacoesSimuladas = {
+                        'PETR4': '32.67',
+                        'VALE3': '68.91',
+                        'SLCE3': '45.20',
+                        'BBAS3': '35.40',
+                        'CPFE3': '32.15',
+                        'CPLE6': '7.23',
+                        'CMIG4': '10.85',
+                        'CSMG3': '6.72',
+                        'TAEE11': '36.40',
+                        'CXSE3': '10.21',
+                        'PSSA3': '45.80',
+                        'GOAU4': '10.55',
+                        'LEVE3': '6.30',
+                        'EMBR3': '16.75',
+                        'DIRR3': '3.45',
+                        'WEGE3': '36.82',
+                        'FRAS3': '7.10',
+                        'MRFG3': '12.40'
+                    };
+                    
+                    const cotacao = cotacoesSimuladas[ticket] || (Math.random() * 100).toFixed(2);
+                    elemento.innerHTML = `R$ ${cotacao}`;
+                    
+                    // Atualizar valor atual e resultado
+                    atualizarValoresAtivo(elemento.closest('tr'));
+                } catch (error) {
+                    elemento.innerHTML = '<span class="text-danger">Erro</span>';
+                    console.error(`Erro ao buscar cotação para ${ticket}:`, error);
+                }
+            }
+        }
+
+        // Função para atualizar valores do ativo
+        function atualizarValoresAtivo(linha) {
+            const quantidade = parseInt(linha.getAttribute('data-quantidade'));
+            const ticket = linha.getAttribute('data-ativo');
+            
+            // Encontrar a cotação atual
+            const cotacaoElemento = linha.querySelector('.cotacao-atual');
+            let cotacaoAtual = 0;
+            
+            if (cotacaoElemento && !cotacaoElemento.textContent.includes('Erro')) {
+                cotacaoAtual = parseFloat(cotacaoElemento.textContent.replace('R$ ', '').replace(',', '.'));
+            }
+            
+            // Calcular valores
+            const valorInvestido = parseFloat(linha.querySelector('td:nth-child(5)').textContent
+                .replace('R$ ', '').replace('.', '').replace(',', '.'));
+            const valorAtual = quantidade * cotacaoAtual;
+            const resultado = valorAtual - valorInvestido;
+            const percentualResultado = (resultado / valorInvestido) * 100;
+            
+            // Atualizar células
+            linha.querySelector('td:nth-child(6)').textContent = `R$ ${valorAtual.toFixed(2).replace('.', ',')}`;
+            
+            const cellResultado = linha.querySelector('td:nth-child(9)');
+            cellResultado.textContent = `${percentualResultado >= 0 ? '+' : ''}${percentualResultado.toFixed(2)}%`;
+            cellResultado.className = percentualResultado >= 0 ? 'positive-return' : 'negative-return';
+            
+            // Atualizar totais da carteira
+            atualizarTotaisCarteira();
+        }
+
+        // Função para atualizar totais da carteira
+        function atualizarTotaisCarteira() {
+            let totalInvestido = 0;
+            let totalAtual = 0;
+            
+            document.querySelectorAll('#tabela-ativos tbody tr').forEach(linha => {
+                if (linha.classList.contains('ativo-item')) {
+                    const valorInvestido = parseFloat(linha.querySelector('td:nth-child(5)').textContent
+                        .replace('R$ ', '').replace('.', '').replace(',', '.'));
+                    const valorAtual = parseFloat(linha.querySelector('td:nth-child(6)').textContent
+                        .replace('R$ ', '').replace('.', '').replace(',', '.'));
+                    
+                    totalInvestido += valorInvestido;
+                    totalAtual += valorAtual;
+                }
+            });
+            
+            const resultado = totalAtual - totalInvestido;
+            const percentualResultado = (resultado / totalInvestido) * 100;
+            
+            document.getElementById('total-investido').textContent = totalInvestido.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            
+            document.getElementById('valor-atual').textContent = totalAtual.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            
+            const elementoResultado = document.getElementById('lucro-prejuizo');
+            elementoResultado.textContent = `${resultado >= 0 ? '+' : ''}R$ ${Math.abs(resultado).toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })} (${percentualResultado >= 0 ? '+' : ''}${percentualResultado.toFixed(2)}%)`;
+            
+            elementoResultado.className = resultado >= 0 ? 'positive-return' : 'negative-return';
+            
+            // Atualizar percentuais de cada ativo
+            document.querySelectorAll('#tabela-ativos tbody tr').forEach(linha => {
+                if (linha.classList.contains('ativo-item')) {
+                    const valorAtual = parseFloat(linha.querySelector('td:nth-child(6)').textContent
+                        .replace('R$ ', '').replace('.', '').replace(',', '.'));
+                    const percentualCarteira = (valorAtual / totalAtual) * 100;
+                    linha.querySelector('td:nth-child(7)').textContent = `${percentualCarteira.toFixed(2)}%`;
+                }
+            });
+        }
+
+        // Função para configurar eventos de edição
+        function configurarEventosEdicao() {
+            // Evento para botão editar
+            document.querySelectorAll('.btn-editar').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const linha = this.closest('tr');
+                    entrarModoEdicao(linha);
+                });
+            });
+            
+            // Evento para botão salvar
+            document.querySelectorAll('.btn-salvar').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const linha = this.closest('tr');
+                    salvarEdicao(linha);
+                });
+            });
+            
+            // Evento para botão cancelar
+            document.querySelectorAll('.btn-cancelar').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const linha = this.closest('tr');
+                    cancelarEdicao(linha);
+                });
+            });
+            
+            // Evento para botão excluir
+            document.querySelectorAll('.btn-excluir').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const linha = this.closest('tr');
+                    excluirAtivo(linha);
+                });
+            });
+        }
+
+        // Função para entrar no modo de edição
+        function entrarModoEdicao(linha) {
+            // Esconder elementos de visualização, mostrar elementos de edição
+            linha.querySelectorAll('.view-mode').forEach(el => el.style.display = 'none');
+            linha.querySelectorAll('.edit-mode').forEach(el => el.style.display = '');
+            
+            // Especificar para inputs
+            linha.querySelectorAll('input.edit-mode').forEach(input => input.style.display = 'block');
+        }
+
+        // Função para salvar edição
+        function salvarEdicao(linha) {
+            // Obter novos valores
+            const novoAtivo = linha.querySelector('td:nth-child(2) input').value;
+            const novaQuantidade = parseInt(linha.querySelector('td:nth-child(3) input').value);
+            
+            // Atualizar valores na linha
+            linha.setAttribute('data-ativo', novoAtivo);
+            linha.setAttribute('data-quantidade', novaQuantidade);
+            
+            // Atualizar elementos de visualização
+            linha.querySelector('td:nth-child(2) .view-mode').textContent = novoAtivo;
+            linha.querySelector('td:nth-child(3) .view-mode').textContent = novaQuantidade.toLocaleString('pt-BR');
+            
+            // Atualizar cotação com novo ticket
+            const elementoCotacao = linha.querySelector('.cotacao-atual');
+            elementoCotacao.setAttribute('data-ticket', novoAtivo);
+            elementoCotacao.innerHTML = '<span class="loading-cotacao">Carregando...</span>';
+            
+            // Sair do modo de edição
+            sairModoEdicao(linha);
+            
+            // Buscar nova cotação
+            setTimeout(() => {
+                buscarCotacaoIndividual(novoAtivo, elementoCotacao).then(() => {
+                    atualizarValoresAtivo(linha);
+                });
+            }, 500);
+        }
+
+        // Função para buscar cotação individual
+        async function buscarCotacaoIndividual(ticket, elemento) {
+            try {
+                // Simulação de busca de cotação
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                // Valores simulados
+                const cotacoesSimuladas = {
+                    'PETR4': '32.67',
+                    'VALE3': '68.91',
+                    'SLCE3': '45.20',
+                    'BBAS3': '35.40',
+                    'CPFE3': '32.15',
+                    'CPLE6': '7.23',
+                    'CMIG4': '10.85',
+                    'CSMG3': '6.72',
+                    'TAEE11': '36.40',
+                    'CXSE3': '10.21',
+                    'PSSA3': '45.80',
+                    'GOAU4': '10.55',
+                    'LEVE3': '6.30',
+                    'EMBR3': '16.75',
+                    'DIRR3': '3.45',
+                    'WEGE3': '36.82',
+                    'FRAS3': '7.10',
+                    'MRFG3': '12.40'
+                };
+                
+                const cotacao = cotacoesSimuladas[ticket] || (Math.random() * 100).toFixed(2);
+                elemento.innerHTML = `R$ ${cotacao}`;
+                
+                return cotacao;
+            } catch (error) {
+                elemento.innerHTML = '<span class="text-danger">Erro</span>';
+                console.error(`Erro ao buscar cotação para ${ticket}:`, error);
+                return '0.00';
+            }
+        }
+
+        // Função para cancelar edição
+        function cancelarEdicao(linha) {
+            // Restaurar valores originais nos inputs
+            const ativoOriginal = linha.getAttribute('data-ativo');
+            const quantidadeOriginal = linha.getAttribute('data-quantidade');
+            
+            linha.querySelector('td:nth-child(2) input').value = ativoOriginal;
+            linha.querySelector('td:nth-child(3) input').value = quantidadeOriginal;
+            
+            // Sair do modo de edição
+            sairModoEdicao(linha);
+        }
+
+        // Função para sair do modo de edição
+        function sairModoEdicao(linha) {
+            // Esconder elementos de edição, mostrar elementos de visualização
+            linha.querySelectorAll('.edit-mode').forEach(el => el.style.display = 'none');
+            linha.querySelectorAll('.view-mode').forEach(el => el.style.display = '');
+        }
+
+        // Função para excluir ativo
+        function excluirAtivo(linha) {
+            if (confirm('Tem certeza que deseja excluir este ativo da carteira?')) {
+                linha.remove();
+                atualizarTotaisCarteira();
+            }
+        }
+
+        // Função para adicionar novo ativo
+        function adicionarNovoAtivo() {
+            const tbody = document.querySelector('#tabela-ativos tbody');
+            const novaLinha = document.createElement('tr');
+            novaLinha.classList.add('ativo-item');
+            
+            // Dados padrão para novo ativo
+            const novoAtivo = 'PETR4';
+            const novaQuantidade = 100;
+            const precoMedio = 30.00;
+            const valorInvestido = novaQuantidade * precoMedio;
+            
+            novaLinha.setAttribute('data-ativo', novoAtivo);
+            novaLinha.setAttribute('data-quantidade', novaQuantidade);
+            
+            novaLinha.innerHTML = `
+                <td><i class="bi bi-grip-vertical"></i></td>
+                <td class="editable-cell">
+                    <span class="view-mode">${novoAtivo}</span>
+                    <input type="text" class="edit-mode form-control form-control-sm" value="${novoAtivo}" style="display: none;">
+                </td>
+                <td class="editable-cell">
+                    <span class="view-mode">${novaQuantidade}</span>
+                    <input type="number" class="edit-mode form-control form-control-sm" value="${novaQuantidade}" style="display: none;">
+                </td>
+                <td class="cotacao-atual" data-ticket="${novoAtivo}">Carregando...</td>
+                <td>R$ ${valorInvestido.toFixed(2).replace('.', ',')}</td>
+                <td>R$ 0,00</td>
+                <td>0,0%</td>
+                <td class="positive-return">+0,0%</td>
+                <td class="negative-return">-100,0%</td>
+                <td>
+                    <div class="btn-group btn-group-sm view-mode">
+                        <button class="btn btn-outline-primary btn-editar">Editar</button>
+                        <button class="btn btn-outline-danger btn-excluir">Excluir</button>
+                    </div>
+                    <div class="btn-group btn-group-sm edit-mode" style="display: none;">
+                        <button class="btn btn-outline-success btn-salvar">Salvar</button>
+                        <button class="btn btn-outline-secondary btn-cancelar">Cancelar</button>
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(novaLinha);
+            
+            // Configurar eventos para os novos botões
+            novaLinha.querySelector('.btn-editar').addEventListener('click', function() {
+                entrarModoEdicao(novaLinha);
+            });
+            
+            novaLinha.querySelector('.btn-salvar').addEventListener('click', function() {
+                salvarEdicao(novaLinha);
+            });
+            
+            novaLinha.querySelector('.btn-cancelar').addEventListener('click', function() {
+                cancelarEdicao(novaLinha);
+            });
+            
+            novaLinha.querySelector('.btn-excluir').addEventListener('click', function() {
+                excluirAtivo(novaLinha);
+            });
+            
+            // Buscar cotação para o novo ativo
+            setTimeout(() => {
+                buscarCotacaoIndividual(novoAtivo, novaLinha.querySelector('.cotacao-atual')).then(() => {
+                    atualizarValoresAtivo(novaLinha);
+                });
+            }, 500);
+        }
+
+        // Função para alternar modo de reordenar
+        function toggleModoReordenar() {
+            const btn = document.getElementById('btn-reordenar');
+            const ativoItens = document.querySelectorAll('.ativo-item');
+            
+            if (btn.classList.contains('active')) {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="bi bi-arrow-down-up"></i> Reordenar';
+                
+                ativoItens.forEach(item => {
+                    item.style.cursor = 'pointer';
+                    item.draggable = false;
+                });
+                
+                // Remover event listeners de drag and drop
+            } else {
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="bi bi-check"></i> Concluir Reordenamento';
+                
+                ativoItens.forEach(item => {
+                    item.style.cursor = 'move';
+                    item.draggable = true;
+                });
+                
+                // Adicionar event listeners de drag and drop
+                configurarDragAndDrop();
+            }
+        }
+
+        // Função para configurar drag and drop
+        function configurarDragAndDrop() {
+            const tbody = document.querySelector('#tabela-ativos tbody');
+            let draggedItem = null;
+            
+            document.querySelectorAll('.ativo-item').forEach(item => {
+                item.addEventListener('dragstart', function() {
+                    draggedItem = this;
+                    setTimeout(() => this.style.opacity = '0.5', 0);
+                });
+                
+                item.addEventListener('dragend', function() {
+                    draggedItem = null;
+                    this.style.opacity = '1';
+                });
+                
+                item.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                });
+                
+                item.addEventListener('dragenter', function(e) {
+                    e.preventDefault();
+                    this.style.backgroundColor = '#f8f9fa';
+                });
+                
+                item.addEventListener('dragleave', function() {
+                    this.style.backgroundColor = '';
+                });
+                
+                item.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.style.backgroundColor = '';
+                    
+                    if (draggedItem !== this) {
+                        if (draggedItem.nextSibling === this) {
+                            tbody.insertBefore(draggedItem, this);
+                        } else {
+                            tbody.insertBefore(this, draggedItem);
+                        }
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>
